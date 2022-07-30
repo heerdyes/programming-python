@@ -1,38 +1,31 @@
-import datetime
-import subprocess
 import os
-import fs
+import sys
+from exc import *
+from sh import process_line, process_batch
 
 vardict = {}
 
-while True:
-    cmd = input('-> ')
-    cmdlst = cmd.split()
-    # ['cf', 'abc.txt']
-    
-    if cmdlst[0] in ['exit','q','quit']:
-        break
-    elif cmdlst[0] == 'hw':
-        print('hello world')
-    elif cmdlst[0] == 'date':
-        print(datetime.datetime.now())
-    elif cmdlst[0] == 'np':
-        subprocess.call(['notepad.exe'])
-    elif cmdlst[0] in ['help','h']:
-        print('supported commands are: hw, date, np, help')
-    elif cmdlst[0] == 'md':
-        param1 = cmdlst[1]
-        os.mkdir(param1)
-    elif cmdlst[0] == 'cf':
-        fs.mkfile()
-    elif cmdlst[0] == 'wf':
-        fs.wrfile()
-    elif cmdlst[0] == 'mkvar':
-        vardict[cmdlst[1]] = cmdlst[2]
-    elif cmdlst[0] == 'vars':
-        for k in vardict.keys():
-            print('-| %s -> %s' % (k,vardict[k]))
+try:
+    if len(sys.argv) == 2:
+        cmdfile=sys.argv[1]
+        if not cmdfile.endswith('.toy'):
+            raise NotAToyException()
+        with open(cmdfile, 'r') as cfp:
+            clns = [x.rstrip() for x in cfp.readlines()]
+        process_batch(clns, vardict)
+    elif len(sys.argv) == 1:
+        while True:
+            cmd = input('toy-> ')
+            try:
+                process_line(cmd, vardict)
+            except ContinueSignal as cs:
+                continue
+            except BreakSignal as bs:
+                break
     else:
-        print('cannot understand command: '+cmdlst[0])
+        print('unsupported number of arguments: %d'%len(sys.argv))
+        print('exiting.')
+except NotAToyException as nate:
+    print('you passed a file that is not a toy!')
+    print('exiting.')
 
-print('goodbye!')
